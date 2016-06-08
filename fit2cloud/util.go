@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/docker/machine/libmachine/state"
 	fit2cloud "renh.yang/fit2cloud-go-sdk"
-	"github.com/docker/machine/libmachine/log"
+	//"github.com/docker/machine/libmachine/log"
 	"renh.yang/fit2cloud-go-sdk/model"
 )
 
@@ -148,7 +148,6 @@ func (d *Driver) getServer() (model.Server, error) {
 	if err != nil {
 		return model.Server{}, err
 	}
-	log.Debugf("ServerID:%v ServerName:%v\n",d.ServerId,d.MachineName)
 	return client.GetServer(d.ServerId)
 }
 

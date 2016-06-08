@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	//"os"
 )
 
 const (
@@ -54,14 +55,14 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaulttemplatename,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "CONSUMER_KEY",
-			Name:   "consumer-key",
-			Usage:  "consumer key",
+			EnvVar: "FIT2CLOUD_CONSUMER_KEY",
+			Name:   "fit2cloud-consumer-key",
+			Usage:  "fit2cloud consumer key",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "SECRET_KEY",
-			Name:   "secret-key",
-			Usage:  "secret key",
+			EnvVar: "FIT2CLOUD_SECRET_KEY",
+			Name:   "fit2cloud-secret-key",
+			Usage:  "fit2cloud secret key",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "FIT2CLOUD_ENDPOINT",
@@ -79,6 +80,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "fit2cloud-cluster-role",
 			Usage:  "fit2cloud cluster role",
 			Value:  defaultCLusterRoleName,
+		},
+		mcnflag.StringFlag{
+			EnvVar:"FIT2CLOUD_SSHKEYPATH",
+			Name: "fit2cloud-ssh-key-path",
+			Usage:"fit2cloud ssh key-path",
 		},
 	}
 }
@@ -108,6 +114,22 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.SSHUser = "hna"
 	d.UserPassword = "Hna!1qwe"
+	//create pem file at local
+	/*
+	fp,err := os.Create("~/azure.pem")
+	if err != nil{
+		return err
+	}
+	if _,err = fp.WriteString(flags.String("fit2cloud-ssk-key"));err != nil{
+		return err
+	}
+	err = fp.Chmod(400)
+	if err != nil{
+		return err
+	}
+
+	d.SSHKeyPath = "~/azure.pem"*/
+	d.SSHKeyPath = flags.String("fit2cloud-ssh-key-path")
 
 	log.Debugf("F2CDriver:%v\n", *d)
 	return nil
@@ -139,10 +161,17 @@ func (d *Driver) Create() error {
 	if err := d.lanuchVM(); err != nil {
 		return err
 	}
+	retries := 0
 	for true {
 		if status, err := d.GetState(); err != nil {
-			return err
+			retries += 1
+			if retries <= 5{
+				continue
+			}else{
+				return err
+			}
 		} else {
+			retries = 0
 			if status != state.Starting && status != state.None {
 				return nil
 			}
@@ -162,7 +191,7 @@ func (d *Driver) GetIP() (string, error) {
 	if err != nil {
 		return "", nil
 	}
-
+        log.Debugf("Server:%v\n",server)
 	return server.RemoteIP, nil
 }
 
@@ -231,5 +260,5 @@ func (d *Driver) GetPassword() string {
 }
 
 func (d *Driver)GetSSHKeyPath() string{
-	return ""
+	return d.SSHKeyPath
 }
